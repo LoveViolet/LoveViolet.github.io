@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  
+  <meta name="baidu-site-verification" content="code-J1Qg17G6wT" />
+  <title>List底层代码剖析 - 流氓兔の窝</title>
+  <meta charset="UTF-8">
+  <meta name="description" content="落魄码农，在线乞讨. 来世还学Unity(哭唧唧）
+">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+  
+  
+
+    <!-- Site Verification -->
+    <meta name="baidu-site-verification" content="code-J1Qg17G6wT" />
+
+  <link rel="shortcut icon" href="/images/head/avatar2.jpg" type="image/png" />
+  <meta name="description" content="&amp;emsp;&amp;emsp;List是C#中一个常见的可伸缩数组组件，我们常用它来代替数组。因为它是可伸缩的，所以我们在编程的时候不用手动去分配数组大小，甚至有时会拿它当链表使用。那么它是怎么编写的呢？每次增加和减少以及赋值，内部是如何执行和运作的呢？接下来进行详细讲解。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="List底层代码剖析">
+<meta property="og:url" content="https://loveviolet.github.io/2022/05/01/List%E5%BA%95%E5%B1%82%E4%BB%A3%E7%A0%81%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="流氓兔の窝">
+<meta property="og:description" content="&amp;emsp;&amp;emsp;List是C#中一个常见的可伸缩数组组件，我们常用它来代替数组。因为它是可伸缩的，所以我们在编程的时候不用手动去分配数组大小，甚至有时会拿它当链表使用。那么它是怎么编写的呢？每次增加和减少以及赋值，内部是如何执行和运作的呢？接下来进行详细讲解。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-05-01T02:31:40.000Z">
+<meta property="article:modified_time" content="2023-12-01T07:16:14.291Z">
+<meta property="article:author" content="色眯眯の流氓兔">
+<meta property="article:tag" content="随笔 List底层代码剖析">
+<meta name="twitter:card" content="summary">
+  <link rel="stylesheet" href="https://lib.baomitu.com/highlight.js/9.15.8/styles/atom-one-dark.min.css" crossorigin>
+  <link rel="stylesheet" href="/lib/mdui_043tiny/css/mdui.css">
+  <link rel="stylesheet" href="/lib/iconfont/iconfont.css">
+  <link rel="stylesheet" href="/lib/fancybox/css/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="https://lib.baomitu.com/justifiedGallery/3.8.1/css/justifiedGallery.min.css">
+  
+    <link rel="stylesheet" href="//at.alicdn.com/t/font_2421060_8z08qcz5sq3.css">
+  
+  <link rel="stylesheet" href="/css/style.css?v=1702549619903">
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="mdui-drawer-body-left">
+  
+  <div id="nexmoe-background">
+    <div class="nexmoe-bg" style="background-image: url(/images/background/bg_01.png)"></div>
+    <div class="nexmoe-small" style="background-image: url(/images/background/lihuii4.png)"></div>
+    <div class="mdui-appbar mdui-shadow-0">
+      <div class="mdui-toolbar">
+        <a mdui-drawer="{target: '#drawer', swipe: true}" title="menu" class="mdui-btn mdui-btn-icon mdui-ripple"><i class="mdui-icon nexmoefont icon-menu"></i></a>
+        <div class="mdui-toolbar-spacer"></div>
+        <!--<a href="javascript:;" class="mdui-btn mdui-btn-icon"><i class="mdui-icon material-icons">search</i></a>-->
+        <a href="/" title="色眯眯の流氓兔" class="mdui-btn mdui-btn-icon"><img src="/images/head/avatar2.jpg" alt="色眯眯の流氓兔"></a>
+       </div>
+    </div>
+  </div>
+  <div id="nexmoe-header">
+      <div class="nexmoe-drawer mdui-drawer" id="drawer">
+    <div class="nexmoe-avatar mdui-ripple">
+        <a href="/" title="色眯眯の流氓兔">
+            <img src="/images/head/avatar2.jpg" alt="色眯眯の流氓兔" alt="色眯眯の流氓兔">
+        </a>
+    </div>
+    <div class="nexmoe-count">
+        <div class="nexmoe-count-item"><span>Articles</span>14 <div class="item-radius"></div><div class="item-radius item-right"></div> </div>
+        <div class="nexmoe-count-item"><span>Tags</span>7<div class="item-radius"></div><div class="item-radius item-right"></div></div>
+        <div class="nexmoe-count-item"><span>Categories</span>0<div class="item-radius"></div><div class="item-radius item-right"></div></div>
+    </div>
+    <div class="nexmoe-list mdui-list" mdui-collapse="{accordion: true}">
+        
+        <a class="nexmoe-list-item mdui-list-item mdui-ripple" href="/about.html" title="色眯眯の流氓兔">
+            <i class="mdui-list-item-icon nexmoefont icon-jiubei1"></i>
+            <div class="mdui-list-item-content">
+                色眯眯の流氓兔
+            </div>
+        </a>
+        
+        <a class="nexmoe-list-item mdui-list-item mdui-ripple" href="/" title="回到首页">
+            <i class="mdui-list-item-icon nexmoefont icon-meishi"></i>
+            <div class="mdui-list-item-content">
+                回到首页
+            </div>
+        </a>
+        
+        <a class="nexmoe-list-item mdui-list-item mdui-ripple" href="/archives.html" title="文章归档">
+            <i class="mdui-list-item-icon nexmoefont icon-hanbao1"></i>
+            <div class="mdui-list-item-content">
+                文章归档
+            </div>
+        </a>
+        
+        <a class="nexmoe-list-item mdui-list-item mdui-ripple" href="/friend.html" title="我的朋友">
+            <i class="mdui-list-item-icon nexmoefont icon-cola"></i>
+            <div class="mdui-list-item-content">
+                我的朋友
+            </div>
+        </a>
+        
+        <a class="nexmoe-list-item mdui-list-item mdui-ripple" href="/download.html" title="下载中心">
+            <i class="mdui-list-item-icon nexmoefont icon-tangguo"></i>
+            <div class="mdui-list-item-content">
+                下载中心
+            </div>
+        </a>
+        
+    </div>
+    <aside id="nexmoe-sidebar">
+  
+  
+<!-- 站内搜索 -->
+
+<div class="nexmoe-widget-wrap">
+    <div class="nexmoe-widget nexmoe-search" >
+        <form id="search-form">
+            <label><input type="text" id="local-search-input" name="q" results="0" placeholder="站内搜索" class="input form-control" autocomplete="off" autocorrect="off"/></label>
+            <!-- 清空/重置搜索框 -->
+            <i class="fa fa-times" onclick="resetSearch()"></i>
+        </form>
+    </div>
+    <div id="local-search-result"></div> <!-- 搜索结果区 -->
+    <!-- <p class='no-result'></p> 无匹配时显示，注意在 CSS 中设置默认隐藏 -->
+</div>
+
+
+  
+  <div class="nexmoe-widget-wrap">
+    <div class="nexmoe-widget nexmoe-social">
+        <a class="mdui-ripple" href="https://qm.qq.com/q/kHJsM8H876" target="_blank" mdui-tooltip="{content: 'QQ'}" style="color: rgb(64, 196, 255);background-color: rgba(64, 196, 255, .1);">
+            <i class="nexmoefont icon-QQ"></i>
+        </a><a class="mdui-ripple" href="mailto:785572731@qq.com" target="_blank" mdui-tooltip="{content: 'mail'}" style="color: rgb(249,8,8);background-color: rgba(249,8,8,.1);">
+            <i class="nexmoefont icon-mail-fill"></i>
+        </a><a class="mdui-ripple" href="https://www.bilibili.com/video/BV1g84y1p7dd/?vd_source=78fcea00bfe4e88e038af26d59ebc021" target="_blank" mdui-tooltip="{content: '哔哩哔哩'}" style="color: rgb(64, 196, 255);background-color: rgba(64, 196, 255, .1);">
+            <i class="nexmoefont icon-bilibili"></i>
+        </a>
+    </div>
+</div>
+  
+  
+
+  
+  
+  <div class="nexmoe-widget-wrap">
+    <div id="randomtagcloud" class="nexmoe-widget tagcloud nexmoe-rainbow">
+      <a href="/tags/GameFramework%E6%A1%86%E6%9E%B6/" style="font-size: 20px;">GameFramework框架</a> <a href="/tags/%E5%8D%8E%E4%BD%97%E7%83%AD%E6%9B%B4%E6%96%B0/" style="font-size: 15px;">华佗热更新</a> <a href="/tags/%E7%BD%91%E6%A0%BC%E6%94%BE%E7%BD%AE%E7%B3%BB%E7%BB%9F/" style="font-size: 10px;">网格放置系统</a> <a href="/tags/%E8%A1%8C%E4%B8%9A%E8%A7%81%E8%A7%A3-%E5%BC%80%E7%AF%87%E5%8D%9A%E6%96%87/" style="font-size: 10px;">行业见解 开篇博文</a> <a href="/tags/%E9%9A%8F%E7%AC%94-Dictionary%E5%BA%95%E5%B1%82%E4%BB%A3%E7%A0%81%E5%89%96%E6%9E%90/" style="font-size: 10px;">随笔 Dictionary底层代码剖析</a> <a href="/tags/%E9%9A%8F%E7%AC%94-GC/" style="font-size: 10px;">随笔 GC</a> <a href="/tags/%E9%9A%8F%E7%AC%94-List%E5%BA%95%E5%B1%82%E4%BB%A3%E7%A0%81%E5%89%96%E6%9E%90/" style="font-size: 10px;">随笔 List底层代码剖析</a>
+    </div>
+    
+  </div>
+
+  
+  
+  <div class="nexmoe-widget-wrap">
+    <h3 class="nexmoe-widget-title">Archive</h3>
+    <div class="nexmoe-widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2045/">2045</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/">2023</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/">2022</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+<style>
+.nexmoe-widget .archive-list-count{
+	position : absolute;
+	right: 15px;
+	top:9px;
+	color: #DDD;
+}
+</style>
+
+  
+</aside>
+    <div class="nexmoe-copyright">
+        &copy; 2023 色眯眯の流氓兔
+        Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+        & <a href="https://github.com/tangyuxian/hexo-theme-tangyuxian" target="_blank">Tangyuxian</a><br/>
+        <a href="http://beian.miit.gov.cn" target="_blank">辽ICP备2021002341号</a><br/>
+        
+        <div style="font-size: 12px">
+            <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+            本站总访问量  <a id="busuanzi_value_site_pv"></a> 次<br />
+            本站访客数<a id="busuanzi_value_site_uv"></a>人次
+        </div>
+        
+        
+    </div>
+
+</div><!-- .nexmoe-drawer -->
+
+  </div>
+  <div id="nexmoe-content">
+    <div class="nexmoe-primary">
+        <div class="nexmoe-post">
+    
+        <div class="nexmoe-post-cover"
+             style="padding-bottom: 24.305555555555554%;">
+            <img data-src="/images/background/bg_01.png" data-sizes="auto" alt="List底层代码剖析" class="lazyload">
+            <h1>List底层代码剖析</h1>
+        </div>
+    
+
+        <div class="nexmoe-post-meta nexmoe-rainbow" style="margin:10px 0!important;">
+    <a><i class="nexmoefont icon-calendar-fill"></i>2022年05月01日</a>
+    <a><i class="nexmoefont icon-areachart"></i>2.9k 字</a>
+    <a><i class="nexmoefont icon-time-circle-fill"></i>大概 14 分钟</a>
+</div>
+
+        <div class="nexmoe-post-right">
+            
+        </div>
+
+        <article>
+            <blockquote>
+<p>&emsp;&emsp;<font color=#1EB5DB size=4>List是C#中一个常见的可伸缩数组组件，我们常用它来代替数组。因为它是可伸缩的，所以我们在编程的时候不用手动去分配数组大小，甚至有时会拿它当链表使用。那么它是怎么编写的呢？每次增加和减少以及赋值，内部是如何执行和运作的呢？接下来进行详细讲解。</font><span id="more"></span></p>
+</blockquote>
+<h2 id="1-构造函数"><a href="#1-构造函数" class="headerlink" title="1.构造函数"></a>1.构造函数</h2><pre><code>[DebuggerTypeProxy(typeof (Mscorlib_CollectionDebugView&lt;&gt;))]
+[DebuggerDisplay(&quot;Count = &#123;Count&#125;&quot;)]
+[__DynamicallyInvokable]
+[Serializable]
+public class List&lt;T&gt; : 
+  IList&lt;T&gt;,
+  ICollection&lt;T&gt;,
+  IEnumerable&lt;T&gt;,
+  IEnumerable,
+  IList,
+  ICollection,
+  IReadOnlyList&lt;T&gt;,
+  IReadOnlyCollection&lt;T&gt;
+&#123;
+  private const int _defaultCapacity = 4;
+  private T[] _items;
+  private int _size;
+  private int _version;
+  [NonSerialized]
+  private object _syncRoot;
+  private static readonly T[] _emptyArray = new T[0];
+
+  [__DynamicallyInvokable]
+  public List() =&gt; this._items = List&lt;T&gt;._emptyArray;
+
+  [__DynamicallyInvokable]
+//这里构建一个list，根据容量值capacity初始化数组，如果要扩充会以2的倍数增加
+  public List(int capacity)
+  &#123;
+    if (capacity &lt; 0)
+      ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.capacity, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+    if (capacity == 0)
+      this._items = List&lt;T&gt;._emptyArray;
+    else
+      this._items = new T[capacity];
+  &#125;
+
+  [__DynamicallyInvokable]
+  public List(IEnumerable&lt;T&gt; collection)
+  &#123;
+    if (collection == null)
+      ThrowHelper.ThrowArgumentNullException(ExceptionArgument.collection);
+    if (collection is ICollection&lt;T&gt; objs)
+    &#123;
+      int count = objs.Count;
+      if (count == 0)
+      &#123;
+        this._items = List&lt;T&gt;._emptyArray;
+      &#125;
+      else
+      &#123;
+        this._items = new T[count];
+        objs.CopyTo(this._items, 0);
+        this._size = count;
+      &#125;
+    &#125;
+    else
+    &#123;
+      this._size = 0;
+      this._items = List&lt;T&gt;._emptyArray;
+      foreach (T obj in collection)
+        this.Add(obj);
+    &#125;
+  &#125;
+…
+&#125;
+</code></pre>
+<p>&emsp;&emsp;从源码中可以知道，List 继承于IList，IReadOnlyList，IList是提供了主要的接口，IReadOnlyList提供了迭代接口。<br>&emsp;&emsp;看构造部分，我们明确了，List内部是用数组实现的，而不是链表，并且当没有给予指定容量时，初始的容量为0。<br>&emsp;&emsp;也就是说，我们可以大概率推测List组件在Add,Remove两个函数调用时都采用的是“从原数组拷贝生成到新数组”的方式工作的。<br>&emsp;&emsp;下面我们来看下，我们的猜测是否正确。</p>
+<h2 id="2-Add函数"><a href="#2-Add函数" class="headerlink" title="2.Add函数"></a>2.Add函数</h2><pre><code>[__DynamicallyInvokable]
+public void Add(T item)
+&#123;
+  if (this._size == this._items.Length)
+    this.EnsureCapacity(this._size + 1);
+  this._items[this._size++] = item;
+  ++this._version;
+&#125;
+
+private void EnsureCapacity(int min)
+&#123;
+  if (this._items.Length &gt;= min)
+    return;
+  int num = this._items.Length == 0 ? 4 : this._items.Length * 2;
+  if ((uint) num &gt; 2146435071U)
+    num = 2146435071;
+  if (num &lt; min)
+    num = min;
+  this.Capacity = num;
+&#125;
+</code></pre>
+<p>&emsp;&emsp;上述List源代码中的Add函数，每次增加一个元素的数据，Add接口都会首先检查的是容量还够不够，如果不够则用 EnsureCapacity 来增加容量。并且每次扩充会增加 一倍容量。<br>&emsp;&emsp;List使用数组作为底层数据结构，优点是使用索引方式提取元素很快，缺点是在扩容时会很糟糕。每次针对数组进行new操作都会造成内存垃圾，这给GC带来很大负担。这里按2的指数扩容的方式，可以为GC减轻负担。但是如果数组被连续申请扩容，还是会造成GC不小的负担，特别是代码中的List频繁使用ADD时，数组会不断被扩容。此外，如果数量使用不当，也会浪费大量内存空间，例如，当元素数量为520时，List就会扩容到1024个元素，导致浪费了许多空间。</p>
+<h2 id="3-Remove函数"><a href="#3-Remove函数" class="headerlink" title="3.Remove函数"></a>3.Remove函数</h2><pre><code>[__DynamicallyInvokable]
+public bool Remove(T item)
+&#123;
+  int index = this.IndexOf(item);
+  if (index &lt; 0)
+    return false;
+  this.RemoveAt(index);
+  return true;
+&#125;
+
+[__DynamicallyInvokable]
+public int IndexOf(T item) =&gt; Array.IndexOf&lt;T&gt;(this._items, item, 0, this._size);
+
+[__DynamicallyInvokable]
+public void RemoveAt(int index)
+&#123;
+  if ((uint) index &gt;= (uint) this._size)
+    ThrowHelper.ThrowArgumentOutOfRangeException();
+  --this._size;
+  if (index &lt; this._size)
+    Array.Copy((Array) this._items, index + 1, (Array) this._items, index, this._size - index);
+  this._items[this._size] = default (T);
+  ++this._version;
+&#125;
+</code></pre>
+<p>&emsp;&emsp;可以看到这里查找下标的方法是用的Array.IndexOf，移除的方法是用的Array.Copy对数组进行复制。</p>
+<h2 id="4-insert接口"><a href="#4-insert接口" class="headerlink" title="4.insert接口"></a>4.insert接口</h2><pre><code>[__DynamicallyInvokable]
+public void Insert(int index, T item)
+&#123;
+  if ((uint) index &gt; (uint) this._size)
+    ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.index, ExceptionResource.ArgumentOutOfRange_ListInsert);
+  if (this._size == this._items.Length)
+    this.EnsureCapacity(this._size + 1);
+  if (index &lt; this._size)
+    Array.Copy((Array) this._items, index, (Array) this._items, index + 1, this._size - index);
+  this._items[index] = item;
+  ++this._size;
+  ++this._version;
+&#125;
+</code></pre>
+<p>&emsp;&emsp;与Add接口一样，先检查容量是否足够，不足则扩容。从源码中获悉，Insert插入元素时，使用的用拷贝数组的形式，将数组里的指定元素后面的元素向后移动一个位置。<br>&emsp;&emsp;看到这里，可以我们明白了List的Add，Insert，IndexOf，Remove接口都是没有做过任何形式的优化，都使用的是顺序迭代的方式，如果过于频繁使用的话，会导致效率降低，也会造成不少内存的冗余，使得垃圾回收(GC)时承担了更多的压力。<br>&emsp;&emsp;其他相关接口比如 AddRange，RemoveRange的原理和Add与Remove一样，区别只是多了几个元素，把单个元素变成了以容器为单位的形式进行操作。都是先检查容量是否合适，不合适则扩容，或者当Remove时先得到索引位置再进行整体的覆盖掉后面的的元素，容器本身大小不会变化，只是做了重复覆盖的操作。</p>
+<h2 id="5-【】接口"><a href="#5-【】接口" class="headerlink" title="5.【】接口"></a>5.【】接口</h2><pre><code>[__DynamicallyInvokable]
+public T this[int index]
+&#123;
+  [__DynamicallyInvokable] get
+  &#123;
+    if ((uint) index &gt;= (uint) this._size)
+      ThrowHelper.ThrowArgumentOutOfRangeException();
+    return this._items[index];
+  &#125;
+  [__DynamicallyInvokable] set
+  &#123;
+    if ((uint) index &gt;= (uint) this._size)
+      ThrowHelper.ThrowArgumentOutOfRangeException();
+    this._items[index] = value;
+    ++this._version;
+  &#125;
+&#125;
+</code></pre>
+<p>&emsp;&emsp;[]的实现，直接使用了数组的索引方式获取元素。</p>
+<h2 id="6-Clear接口"><a href="#6-Clear接口" class="headerlink" title="6.Clear接口"></a>6.Clear接口</h2><pre><code>[__DynamicallyInvokable]
+public void Clear()
+&#123;
+  if (this._size &gt; 0)
+  &#123;
+    Array.Clear((Array) this._items, 0, this._size);
+    this._size = 0;
+  &#125;
+  ++this._version;
+&#125;
+</code></pre>
+<p>&emsp;&emsp;Clear接口在调用时并不会删除数组，而只是将数组中的元素清零，并设置 _size 为 0 而已，用于虚拟地表明当前容量为0，便于垃圾回收器回收不用的数组对象。</p>
+<h2 id="7-Contains接口"><a href="#7-Contains接口" class="headerlink" title="7.Contains接口"></a>7.Contains接口</h2><pre><code>[__DynamicallyInvokable]
+public bool Contains(T item)
+&#123;
+  if ((object) item == null)
+  &#123;
+    for (int index = 0; index &lt; this._size; ++index)
+    &#123;
+      if ((object) this._items[index] == null)
+        return true;
+    &#125;
+    return false;
+  &#125;
+  EqualityComparer&lt;T&gt; equalityComparer = EqualityComparer&lt;T&gt;.Default;
+  for (int index = 0; index &lt; this._size; ++index)
+  &#123;
+    if (equalityComparer.Equals(this._items[index], item))
+      return true;
+  &#125;
+  return false;
+&#125;
+</code></pre>
+<p>&emsp;&emsp;从源代码中我们可以看到，Contains 接口使用的是线性查找方式比较元素，对数组进行迭代，比较每个元素与参数的实例是否一致，如果一致则返回true，全部比较结束还没有找到，则认为查找失败。</p>
+<h2 id="8-ToArray接口"><a href="#8-ToArray接口" class="headerlink" title="8.ToArray接口"></a>8.ToArray接口</h2><pre><code>[__DynamicallyInvokable]
+public T[] ToArray()
+&#123;
+  T[] destinationArray = new T[this._size];
+  Array.Copy((Array) this._items, 0, (Array) destinationArray, 0, this._size);
+  return destinationArray;
+&#125;
+</code></pre>
+<p>&emsp;&emsp;ToArray接口中，重新new了一个指定大小的数组，再将本身数组上的内容拷贝到新数组上，再返回出来。但是如果使用太多，会造成大量的内存分配，在内存上留下很多无用的垃圾。</p>
+<h2 id="9-Find接口"><a href="#9-Find接口" class="headerlink" title="9.Find接口"></a>9.Find接口</h2><pre><code>[__DynamicallyInvokable]
+public T Find(Predicate&lt;T&gt; match)
+&#123;
+  if (match == null)
+    ThrowHelper.ThrowArgumentNullException(ExceptionArgument.match);
+  for (int index = 0; index &lt; this._size; ++index)
+  &#123;
+    if (match(this._items[index]))
+      return this._items[index];
+  &#125;
+  return default (T);
+&#125;
+</code></pre>
+<p>&emsp;&emsp;Find接口使用的同样是线性查找，对每个元素都进行了比较，复杂度为O(n)。</p>
+<h2 id="10-Enumerator接口"><a href="#10-Enumerator接口" class="headerlink" title="10.Enumerator接口"></a>10.Enumerator接口</h2><pre><code>[__DynamicallyInvokable]
+public List&lt;T&gt;.Enumerator GetEnumerator() =&gt; new List&lt;T&gt;.Enumerator(this);
+
+[__DynamicallyInvokable]
+IEnumerator&lt;T&gt; IEnumerable&lt;T&gt;.GetEnumerator() =&gt; (IEnumerator&lt;T&gt;) new List&lt;T&gt;.Enumerator(this);
+
+[__DynamicallyInvokable]
+IEnumerator IEnumerable.GetEnumerator() =&gt; (IEnumerator) new List&lt;T&gt;.Enumerator(this);
+</code></pre>
+<pre><code>[__DynamicallyInvokable]
+[Serializable]
+public struct Enumerator : IEnumerator&lt;T&gt;, IDisposable, IEnumerator
+&#123;
+  private List&lt;T&gt; list;
+  private int index;
+  private int version;
+  private T current;
+
+  internal Enumerator(List&lt;T&gt; list)
+  &#123;
+    this.list = list;
+    this.index = 0;
+    this.version = list._version;
+    this.current = default (T);
+  &#125;
+
+  [__DynamicallyInvokable]
+  public void Dispose()
+  &#123;
+  &#125;
+
+  [__DynamicallyInvokable]
+  public bool MoveNext()
+  &#123;
+    List&lt;T&gt; list = this.list;
+    if (this.version != list._version || (uint) this.index &gt;= (uint) list._size)
+      return this.MoveNextRare();
+    this.current = list._items[this.index];
+    ++this.index;
+    return true;
+  &#125;
+
+  private bool MoveNextRare()
+  &#123;
+    if (this.version != this.list._version)
+      ThrowHelper.ThrowInvalidOperationException(ExceptionResource.InvalidOperation_EnumFailedVersion);
+    this.index = this.list._size + 1;
+    this.current = default (T);
+    return false;
+  &#125;
+
+  [__DynamicallyInvokable]
+  public T Current
+  &#123;
+    [__DynamicallyInvokable] get =&gt; this.current;
+  &#125;
+
+  [__DynamicallyInvokable]
+  object IEnumerator.Current
+  &#123;
+    [__DynamicallyInvokable] get
+    &#123;
+      if (this.index == 0 || this.index == this.list._size + 1)
+        ThrowHelper.ThrowInvalidOperationException(ExceptionResource.InvalidOperation_EnumOpCantHappen);
+      return (object) this.Current;
+    &#125;
+  &#125;
+
+  [__DynamicallyInvokable]
+  void IEnumerator.Reset()
+  &#123;
+    if (this.version != this.list._version)
+      ThrowHelper.ThrowInvalidOperationException(ExceptionResource.InvalidOperation_EnumFailedVersion);
+    this.index = 0;
+    this.current = default (T);
+  &#125;
+&#125;
+</code></pre>
+<p>&emsp;&emsp;其中我们需要注意 Enumerator 这个结构，每次获取迭代器时，Enumerator 每次都是被new出来，如果大量使用迭代器的话，比如foreach就会造成大量的垃圾对象，这也是为什么我们常常告诫程序员们，尽量不要用foreach，因为 List 的 foreach 会增加有新的 Enumerator 实例，最后由GC垃圾回收掉。虽然.NET在4.0之后修复了这个问题，但还是不建议大量使用foreach。</p>
+<h2 id="11-Sort接口"><a href="#11-Sort接口" class="headerlink" title="11.Sort接口"></a>11.Sort接口</h2><pre><code>[__DynamicallyInvokable]
+public void Sort(int index, int count, IComparer&lt;T&gt; comparer)
+&#123;
+  if (index &lt; 0)
+    ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.index, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+  if (count &lt; 0)
+    ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+  if (this._size - index &lt; count)
+    ThrowHelper.ThrowArgumentException(ExceptionResource.Argument_InvalidOffLen);
+  Array.Sort&lt;T&gt;(this._items, index, count, comparer);
+  ++this._version;
+&#125;
+</code></pre>
+<pre><code>private void DepthLimitedQuickSort(int left, int right, int depthLimit)
+&#123;
+  while (depthLimit != 0)
+  &#123;
+    int index1 = left;
+    int index2 = right;
+    int median = Array.GetMedian(index1, index2);
+    try
+    &#123;
+      this.SwapIfGreaterWithItems(index1, median);
+      this.SwapIfGreaterWithItems(index1, index2);
+      this.SwapIfGreaterWithItems(median, index2);
+    &#125;
+    catch (Exception ex)
+    &#123;
+      throw new InvalidOperationException(Environment.GetResourceString(&quot;InvalidOperation_IComparerFailed&quot;), ex);
+    &#125;
+    object key1 = this.keys[median];
+    do
+    &#123;
+      try
+      &#123;
+        while (this.comparer.Compare(this.keys[index1], key1) &lt; 0)
+          ++index1;
+        while (this.comparer.Compare(key1, this.keys[index2]) &lt; 0)
+          --index2;
+      &#125;
+      catch (IndexOutOfRangeException ex)
+      &#123;
+        throw new ArgumentException(Environment.GetResourceString(&quot;Arg_BogusIComparer&quot;, (object) this.comparer));
+      &#125;
+      catch (Exception ex)
+      &#123;
+        throw new InvalidOperationException(Environment.GetResourceString(&quot;InvalidOperation_IComparerFailed&quot;), ex);
+      &#125;
+      if (index1 &lt;= index2)
+      &#123;
+        if (index1 &lt; index2)
+        &#123;
+          object key2 = this.keys[index1];
+          this.keys[index1] = this.keys[index2];
+          this.keys[index2] = key2;
+          if (this.items != null)
+          &#123;
+            object obj = this.items[index1];
+            this.items[index1] = this.items[index2];
+            this.items[index2] = obj;
+          &#125;
+        &#125;
+        ++index1;
+        --index2;
+      &#125;
+      else
+        break;
+    &#125;
+    while (index1 &lt;= index2);
+    --depthLimit;
+    if (index2 - left &lt;= right - index1)
+    &#123;
+      if (left &lt; index2)
+        this.DepthLimitedQuickSort(left, index2, depthLimit);
+      left = index1;
+    &#125;
+    else
+    &#123;
+      if (index1 &lt; right)
+        this.DepthLimitedQuickSort(index1, right, depthLimit);
+      right = index2;
+    &#125;
+    if (left &gt;= right)
+      return;
+  &#125;
+  try
+  &#123;
+    this.Heapsort(left, right);
+  &#125;
+  catch (IndexOutOfRangeException ex)
+  &#123;
+    throw new ArgumentException(Environment.GetResourceString(&quot;Arg_BogusIComparer&quot;, (object) this.comparer));
+  &#125;
+  catch (Exception ex)
+  &#123;
+    throw new InvalidOperationException(Environment.GetResourceString(&quot;InvalidOperation_IComparerFailed&quot;), ex);
+  &#125;
+&#125;
+</code></pre>
+<p>&emsp;&emsp;Array.Sort 使用的是快速排序方式进行排序，从而我们明白了 List 的 Sort 排序的效率为O(nlogn)。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>&emsp;&emsp;我们把大部分的接口都列了出来，差不多把所有的源码都分析了一遍，我们可以看到 List 的效率并不高，只是通用性强而已，大部分的算法都使用的是线性复杂度的算法，这种线性算法当遇到规模比较大的计算量级时就会导致CPU的大量损耗。我们可以自己改进它，比如不再使用有线性算法的接口，自己重写一套，但凡要优化List 中的线性算法的地方都使用，我们自己制作的工具类。List的内存分配方式也极为不合理，当List里的元素不断增加时，会多次重新new数组，导致原来的数组被抛弃，最后当GC被调用时造成回收的压力。我们可以提前告知 List 对象最多会有多少元素在里面，这样的话 List 就不会因为空间不够而抛弃原有的数组，去重新申请数组了。另外我们也可以从源码上看得出，代码是线程不安全的，它并没有对多线程下做任何锁或其他同步操作。并发情况下，无法判断 _size++ 的执行顺序，因此当我们在多线程间使用 List 时加上安全机制。<br>&emsp;&emsp;最后List 并不是高效的组件，真实情况是，他比数组的效率还要差的多，他只是个兼容性比较强得组件而已，好用，但效率差。</p>
+
+        </article>
+
+        
+            
+  <div class="nexmoe-post-copyright">
+    <strong>Author：</strong>色眯眯の流氓兔<br>
+    
+    <strong>Link：</strong><a href="https://loveviolet.github.io/2022/05/01/List%E5%BA%95%E5%B1%82%E4%BB%A3%E7%A0%81%E5%89%96%E6%9E%90/" title="https:&#x2F;&#x2F;loveviolet.github.io&#x2F;2022&#x2F;05&#x2F;01&#x2F;List%E5%BA%95%E5%B1%82%E4%BB%A3%E7%A0%81%E5%89%96%E6%9E%90&#x2F;" target="_blank" rel="noopener">https:&#x2F;&#x2F;loveviolet.github.io&#x2F;2022&#x2F;05&#x2F;01&#x2F;List%E5%BA%95%E5%B1%82%E4%BB%A3%E7%A0%81%E5%89%96%E6%9E%90&#x2F;</a><br>
+
+    
+      <strong>版权声明：</strong>本文采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/deed.zh" target="_blank">CC BY-NC-SA 3.0 CN</a> 协议进行许可
+    
+  </div>
+
+
+        
+
+        <div class="nexmoe-post-meta nexmoe-rainbow">
+    
+    
+        <a class="nexmoefont icon-tag-fill -none-link" href="/tags/%E9%9A%8F%E7%AC%94-List%E5%BA%95%E5%B1%82%E4%BB%A3%E7%A0%81%E5%89%96%E6%9E%90/" rel="tag">随笔 List底层代码剖析</a>
+    
+</div>
+
+    <div class="nexmoe-post-footer">
+        <section class="nexmoe-comment">
+    <div class="valine"></div>
+<script src='https://lib.baomitu.com/valine/1.3.9/Valine.min.js'></script>
+<script>
+    // 使用方法 https://valine.js.org/quickstart.html
+    new Valine({
+        el: '.valine',
+        appId: 'r5zxC0st0DDjPA9auXzMV7HY-gzGzoHsz',
+        appKey: '3bqCsovpyfTPHUzTHovd3V3V'
+    })
+</script>
+</section>
+    </div>
+</div>
+
+
+        <div class="nexmoe-post-right">
+          
+            <div class="nexmoe-fixed">
+              <div class="nexmoe-tool">
+                <a href="#" aria-label="回到顶部" title="top"><button class="mdui-fab mdui-ripple"><i class="nexmoefont icon-caret-top"></i></button></a>
+              </div>
+            </div>
+          
+        </div>
+    </div>
+  </div>
+  <div id="nexmoe-pendant">
+    <div class="nexmoe-drawer mdui-drawer nexmoe-pd" id="drawer">
+        
+            <div class="nexmoe-pd-item">
+                <div class="clock">
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="memory"></div>
+        <div class="needle" id="hours"></div>
+        <div class="needle" id="minutes"></div>
+        <div class="needle" id="seconds"></div>
+        <div class="clock_logo">
+
+        </div>
+
+    </div>
+<style>
+    .clock {
+        background-color: #ffffff;
+        width: 70vw;
+        height: 70vw;
+        max-width: 70vh;
+        max-height: 70vh;
+        border: solid 2.8vw #242424;
+        position: relative;
+        overflow: hidden;
+        border-radius: 50%;
+        box-sizing: border-box;
+        box-shadow: 0 1.4vw 2.8vw rgba(0, 0, 0, 0.8);
+        zoom:0.2
+    }
+
+    .memory {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform-origin: center;
+    }
+
+    .memory:nth-child(1) {
+        background-color: #424242;
+        width: 2%;
+        height: 8%;
+        transform: translate(-50%, -50%) rotate(0deg) translateY(-520%);
+    }
+
+    .memory:nth-child(2) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(6deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(3) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(12deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(4) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(18deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(5) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(24deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(6) {
+        background-color: #424242;
+        width: 2%;
+        height: 8%;
+        transform: translate(-50%, -50%) rotate(30deg) translateY(-520%);
+    }
+
+    .memory:nth-child(7) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(36deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(8) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(42deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(9) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(48deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(10) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(54deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(11) {
+        background-color: #424242;
+        width: 2%;
+        height: 8%;
+        transform: translate(-50%, -50%) rotate(60deg) translateY(-520%);
+    }
+
+    .memory:nth-child(12) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(66deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(13) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(72deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(14) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(78deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(15) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(84deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(16) {
+        background-color: #424242;
+        width: 2%;
+        height: 8%;
+        transform: translate(-50%, -50%) rotate(90deg) translateY(-520%);
+    }
+
+    .memory:nth-child(17) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(96deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(18) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(102deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(19) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(108deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(20) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(114deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(21) {
+        background-color: #424242;
+        width: 2%;
+        height: 8%;
+        transform: translate(-50%, -50%) rotate(120deg) translateY(-520%);
+    }
+
+    .memory:nth-child(22) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(126deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(23) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(132deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(24) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(138deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(25) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(144deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(26) {
+        background-color: #424242;
+        width: 2%;
+        height: 8%;
+        transform: translate(-50%, -50%) rotate(150deg) translateY(-520%);
+    }
+
+    .memory:nth-child(27) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(156deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(28) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(162deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(29) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(168deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(30) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(174deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(31) {
+        background-color: #424242;
+        width: 2%;
+        height: 8%;
+        transform: translate(-50%, -50%) rotate(180deg) translateY(-520%);
+    }
+
+    .memory:nth-child(32) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(186deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(33) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(192deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(34) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(198deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(35) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(204deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(36) {
+        background-color: #424242;
+        width: 2%;
+        height: 8%;
+        transform: translate(-50%, -50%) rotate(210deg) translateY(-520%);
+    }
+
+    .memory:nth-child(37) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(216deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(38) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(222deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(39) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(228deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(40) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(234deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(41) {
+        background-color: #424242;
+        width: 2%;
+        height: 8%;
+        transform: translate(-50%, -50%) rotate(240deg) translateY(-520%);
+    }
+
+    .memory:nth-child(42) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(246deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(43) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(252deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(44) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(258deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(45) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(264deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(46) {
+        background-color: #424242;
+        width: 2%;
+        height: 8%;
+        transform: translate(-50%, -50%) rotate(270deg) translateY(-520%);
+    }
+
+    .memory:nth-child(47) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(276deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(48) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(282deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(49) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(288deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(50) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(294deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(51) {
+        background-color: #424242;
+        width: 2%;
+        height: 8%;
+        transform: translate(-50%, -50%) rotate(300deg) translateY(-520%);
+    }
+
+    .memory:nth-child(52) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(306deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(53) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(312deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(54) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(318deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(55) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(324deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(56) {
+        background-color: #424242;
+        width: 2%;
+        height: 8%;
+        transform: translate(-50%, -50%) rotate(330deg) translateY(-520%);
+    }
+
+    .memory:nth-child(57) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(336deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(58) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(342deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(59) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(348deg) translateY(-1461%);
+    }
+
+    .memory:nth-child(60) {
+        background-color: #949494;
+        width: 1%;
+        height: 3%;
+        transform: translate(-50%, -50%) rotate(354deg) translateY(-1461%);
+    }
+
+    .needle {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform-origin: center;
+    }
+
+    .needle#hours {
+        background-color: #1f1f1f;
+        width: 4%;
+        height: 30%;
+        transform-origin: center 75%;
+        transform: translate(-50%, -75%);
+    }
+
+    .needle#hours.moving {
+        transition: transform 150ms ease-out;
+    }
+
+    .needle#hours:after {
+        content: '';
+        background-color: #1f1f1f;
+        width: 4vw;
+        height: 4vw;
+        max-width: 4vh;
+        max-height: 4vh;
+        display: block;
+        position: absolute;
+        top: 75%;
+        left: 50%;
+        box-sizing: border-box;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .needle#minutes {
+        background-color: #1f1f1f;
+        width: 2%;
+        height: 45%;
+        transform-origin: center 75%;
+        transform: translate(-50%, -75%);
+    }
+
+    .needle#minutes.moving {
+        transition: transform 150ms ease-out;
+    }
+
+    .needle#minutes:after {
+        content: '';
+        background-color: #1f1f1f;
+        width: 4vw;
+        height: 4vw;
+        max-width: 4vh;
+        max-height: 4vh;
+        display: block;
+        position: absolute;
+        top: 75%;
+        left: 50%;
+        box-sizing: border-box;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .needle#seconds {
+        background-color: #cb2f2f;
+        width: 1%;
+        height: 50%;
+        transform-origin: center 75%;
+        transform: translate(-50%, -75%);
+    }
+
+    .needle#seconds.moving {
+        transition: transform 150ms ease-out;
+    }
+
+    .needle#seconds:after {
+        content: '';
+        background-color: #cb2f2f;
+        width: 2.5vw;
+        height: 2.5vw;
+        max-width: 2.5vh;
+        max-height: 2.5vh;
+        display: block;
+        position: absolute;
+        top: 75%;
+        left: 50%;
+        box-sizing: border-box;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+    }
+    .clock_logo{
+        width: 10vw;
+        height: 10vw;
+        max-width: 10vh;
+        max-height: 10vh;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        box-sizing: border-box;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+    }
+    @media (min-width: 100vh) {
+        .clock {
+            border: solid 2.8vh #242424;
+            box-shadow: 0 1.4vh 2.8vh rgba(0, 0, 0, 0.8);
+        }
+    }
+
+</style>
+
+
+
+
+
+            </div>
+        
+            <div class="nexmoe-pd-item">
+                <div class="qweather" >
+    <div id="he-plugin-standard"></div>
+    <div class="qweather-logo">
+
+    </div>
+
+</div>
+<style>
+    .qweather{
+        position: relative;
+    }
+    .qweather-logo{
+        position: absolute;
+        right: 0;
+        top: -15px;
+        width: 40px;
+        height: 40px;
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+    }
+</style>
+<script>
+  WIDGET = {
+    "CONFIG": {
+      "layout": "2",
+      "width": "260",
+      "height": "220",
+      "background": "5",
+      "dataColor": "e67249",
+      "borderRadius": "15",
+      "key": "f74d1e1690e6432d801e97fa2f05a162"
+    }
+  }
+</script>
+<script src="https://widget.qweather.net/standard/static/js/he-standard-common.js?v=2.0"></script>
+
+            </div>
+        
+</div>
+<style>
+    .nexmoe-pd {
+        left: auto;
+        top: 40px;
+        right: 0;
+    }
+    .nexmoe-pd-item{
+       display: flex;
+        justify-content: center;
+        margin-bottom: 30px;
+    }
+</style>
+
+  </div>
+  <script src="https://lib.baomitu.com/lazysizes/5.1.0/lazysizes.min.js"></script>
+<script src="https://lib.baomitu.com/highlight.js/10.0.0/highlight.min.js"></script>
+<script src="https://lib.baomitu.com/mdui/0.4.3/js/mdui.min.js"></script>
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+
+<script src="https://lib.baomitu.com/jquery/3.5.1/jquery.slim.min.js"></script>
+<script src="/lib/fancybox/js/jquery.fancybox.min.js"></script>
+
+
+<script src="/js/app.js?v=1702549619903"></script>
+
+<script src="https://lib.baomitu.com/justifiedGallery/3.8.1/js/jquery.justifiedGallery.min.js"></script>
+<script>
+	$(".justified-gallery").justifiedGallery({
+		rowHeight: 160,
+		margins: 10,
+	});
+</script>
+
+  
+
+
+
+
+
+<!-- hexo injector body_end start -->
+<script src="/js/clock.js"></script>
+
+<script src="https://lib.baomitu.com/clipboard.js/2.0.8/clipboard.min.js"></script>
+
+<script src="/lib/codeBlock/codeBlockFuction.js"></script>
+
+<script src="/lib/codeBlock/codeLang.js"></script>
+
+<script src="/lib/codeBlock/codeCopy.js"></script>
+
+<script src="/lib/codeBlock/codeShrink.js"></script>
+
+<link rel="stylesheet" href="/lib/codeBlock/matery.css">
+
+<script src="/js/webapp.js"></script>
+
+<script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+
+<script src="/js/search.js"></script>
+<!-- hexo injector body_end end --></body>
+</html>
+
